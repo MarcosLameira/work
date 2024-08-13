@@ -834,7 +834,8 @@ export class IoSocketController {
                         }
                         case "leaveChatRoomAreaMessage":{
                             socketManager.handleLeaveChatRoomArea(
-                                socket
+                                socket,
+                                message.message.leaveChatRoomAreaMessage.roomID
                             );
                             break;
                         }
