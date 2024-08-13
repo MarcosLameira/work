@@ -811,13 +811,6 @@ export class IoSocketController {
                             );
                             break;
                         }
-                        case "enterChatRoomAreaMessage":{
-                            await socketManager.handleEnterChatRoomArea(
-                                socket,
-                                message.message.enterChatRoomAreaMessage.roomID
-                            );
-                            break;
-                        }
                         case "leaveChatRoomAreaMessage":{
                             socketManager.handleLeaveChatRoomArea(
                                 socket,
@@ -898,10 +891,25 @@ export class IoSocketController {
                                     }
                                     case "createChatRoomForAreaQuery" : {
                                         const createChatRoomForAreaAnswer = await socketManager.handleCreateChatRoomForAreaQuery(message.message.queryMessage.query.createChatRoomForAreaQuery);
+                                       
                                         answerMessage.answer = {
                                             $case:"createChatRoomForAreaAnswer",
                                             createChatRoomForAreaAnswer
                                         }
+                                        this.sendAnswerMessage(socket,answerMessage);
+                                        break;
+                                    }
+                                    case "enterChatRoomAreaQuery":{
+                                        await socketManager.handleEnterChatRoomAreaQuery(
+                                            socket,
+                                            message.message.queryMessage.query.enterChatRoomAreaQuery.roomID
+                                        );
+
+                                        answerMessage.answer = {
+                                            $case:"enterChatRoomAreaAnswer",
+                                            enterChatRoomAreaAnswer:{}
+                                        }
+
                                         this.sendAnswerMessage(socket,answerMessage);
                                         break;
                                     }
