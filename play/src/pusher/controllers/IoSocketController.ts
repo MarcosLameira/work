@@ -825,13 +825,6 @@ export class IoSocketController {
                             );
                             break;
                         }
-                        case "enterChatRoomAreaMessage":{
-                            await socketManager.handleEnterChatRoomArea(
-                                socket,
-                                message.message.enterChatRoomAreaMessage.roomID
-                            );
-                            break;
-                        }
                         case "leaveChatRoomAreaMessage":{
                             socketManager.handleLeaveChatRoomArea(
                                 socket,
