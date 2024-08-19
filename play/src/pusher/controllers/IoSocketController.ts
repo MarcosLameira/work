@@ -822,7 +822,17 @@ export class IoSocketController {
                             socketManager.handleChangeChatRoomAreaName(
                                 message.message.changeChatRoomAreaNameMessage.roomID,
                                 message.message.changeChatRoomAreaNameMessage.name
-                            );
+                            ).catch((error)=>{
+                                console.error(error)
+                            });
+                            break;
+                        }
+                        case "deleteChatRoomAreaMessage":{
+                            socketManager.handleDeleteChatRoomArea(
+                                message.message.deleteChatRoomAreaMessage.roomID
+                            ).catch((error)=>{
+                                console.error(error)
+                            });;
                             break;
                         }
                         case "leaveChatRoomAreaMessage":{
