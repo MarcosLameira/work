@@ -41,7 +41,7 @@ export class MatrixChatRoom implements ChatRoom {
     inMemoryEventsContent: Map<EventId, IContent>;
     isEncrypted!: Writable<boolean>;
     typingMembers: Writable<Array<{ id: string; name: string | null; avatarUrl: string | null }>>;
-    isSpaceRoom = false; 
+    isSpaceRoom = false;
 
     constructor(private matrixRoom: Room) {
         this.id = matrixRoom.roomId;
