@@ -837,20 +837,6 @@ export class IoSocketController {
                                 });
                             break;
                         }
-                        case "leaveChatRoomAreaMessage":{
-                            socketManager.handleLeaveChatRoomArea(
-                                socket,
-                                message.message.leaveChatRoomAreaMessage.roomID
-                            );
-                            break;
-                        }
-                        case "changeChatRoomAreaNameMessage":{
-                            socketManager.handleChangeChatRoomAreaName(
-                                message.message.changeChatRoomAreaNameMessage.roomID,
-                                message.message.changeChatRoomAreaNameMessage.name
-                            );
-                            break;
-                        }
                         case "queryMessage": {
                             try {
                                 const answerMessage: AnswerMessage = {
@@ -858,7 +844,9 @@ export class IoSocketController {
                                 };
                                 switch (message.message.queryMessage.query?.$case) {
                                     case "roomTagsQuery": {
-                                        await socketManager.handleRoomTagsQuery(socket, message.message.queryMessage);
+                                        await socketManager
+                                            .handleRoomTagsQuery(socket, message.message.queryMessage)
+                                            .catch((error) => console.error(error));
                                         break;
                                     }
                                     case "embeddableWebsiteQuery": {
