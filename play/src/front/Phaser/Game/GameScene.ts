@@ -39,6 +39,7 @@ import { lazyLoadPlayerCharacterTextures } from "../Entity/PlayerTexturesLoading
 import { lazyLoadPlayerCompanionTexture } from "../Companion/CompanionTexturesLoadingManager";
 import { iframeListener } from "../../Api/IframeListener";
 import {
+    ADMIN_URL,
     DEBUG_MODE,
     ENABLE_MAP_EDITOR,
     ENABLE_OPENID,
@@ -121,7 +122,7 @@ import type { AddPlayerEvent } from "../../Api/Events/AddPlayerEvent";
 import type { AskPositionEvent } from "../../Api/Events/AskPositionEvent";
 import { chatVisibilityStore, forceRefreshChatStore } from "../../Stores/ChatStore";
 import type { HasPlayerMovedInterface } from "../../Api/Events/HasPlayerMovedInterface";
-import { gameSceneIsLoadedStore, gameSceneStore } from "../../Stores/GameSceneStore";
+import { extensionModuleStore, gameSceneIsLoadedStore, gameSceneStore } from "../../Stores/GameSceneStore";
 import { myCameraBlockedStore, myMicrophoneBlockedStore } from "../../Stores/MyMediaStore";
 import type { GameStateEvent } from "../../Api/Events/GameStateEvent";
 import { modalVisibilityStore } from "../../Stores/ModalStore";
@@ -147,7 +148,7 @@ import { JitsiBroadcastSpace } from "../../Streaming/Jitsi/JitsiBroadcastSpace";
 import { hideBubbleConfirmationModal } from "../../Rules/StatusRules/statusChangerFunctions";
 import { statusChanger } from "../../Components/ActionBar/AvailabilityStatus/statusChanger";
 import { warningMessageStore } from "../../Stores/ErrorStore";
-import { getCoWebSite, openCoWebSite } from "../../Chat/Utils";
+import { closeCoWebsite, getCoWebSite, openCoWebSite, openCoWebSiteWithoutSource } from "../../Chat/Utils";
 import { WORLD_SPACE_NAME } from "../../Space/Space";
 import { ChatConnectionInterface } from "../../Chat/Connection/ChatConnection";
 import { MatrixChatConnection } from "../../Chat/Connection/Matrix/MatrixChatConnection";
@@ -161,6 +162,9 @@ import { WorldUserProvider } from "../../Chat/UserProvider/WorldUserProvider";
 import { MatrixUserProvider } from "../../Chat/UserProvider/MatrixUserProvider";
 import { UserProviderMerger } from "../../Chat/UserProviderMerger/UserProviderMerger";
 import { AdminUserProvider } from "../../Chat/UserProvider/AdminUserProvider";
+import { ExtensionModuleStatusSynchronization } from "../../Rules/StatusRules/ExtensionModuleStatusSynchronization";
+import { calendarEventsStore, isActivatedStore } from "../../Stores/CalendarStore";
+import { ExtensionModule, RoomMetadataType } from "../../ExternalModule/ExtensionModule";
 import { GameMapFrontWrapper } from "./GameMap/GameMapFrontWrapper";
 import { gameManager } from "./GameManager";
 import { EmoteManager } from "./EmoteManager";
@@ -330,6 +334,7 @@ export class GameScene extends DirtyScene {
     private _spaceRegistry: SpaceRegistryInterface | undefined;
     private _proximityChatRoom: ProximityChatRoom | undefined;
     private _userProviderMerger: UserProviderMerger | undefined;
+    public extensionModule: ExtensionModule | undefined = undefined;
 
     // FIXME: we need to put a "unknown" instead of a "any" and validate the structure of the JSON we are receiving.
 
@@ -1040,6 +1045,8 @@ export class GameScene extends DirtyScene {
         this.playersMovementEventDispatcher.cleanup();
         this.gameMapFrontWrapper?.close();
         this.followManager?.close();
+        this.extensionModule?.destroy();
+        extensionModuleStore.set(undefined);
 
         //When we leave game, the camera is stop to be reopen after.
         // I think that we could keep camera status and the scene can manage camera setup
@@ -1063,6 +1070,7 @@ export class GameScene extends DirtyScene {
             this.hideTimeout = undefined;
         }
     }
+
     /**
      * @param time
      * @param delta The delta time in ms since the last frame. This is a smoothed and capped value based on the FPS rate.
@@ -1546,6 +1554,8 @@ export class GameScene extends DirtyScene {
                 const email: string | null = localUserStore.getLocalUser()?.email || null;
                 if (email && chatId) this.connection.emitUpdateChatId(email, chatId);
 
+                this.initExtensionModule();
+
                 this.tryOpenMapEditorWithToolEditorParameter();
 
                 this.subscribeToStores();
@@ -1900,6 +1910,47 @@ export class GameScene extends DirtyScene {
                 gameSceneIsLoadedStore.set(true);
             })
             .catch((e) => console.error(e));
+    }
+
+    private initExtensionModule() {
+        if (this._room.metadata != undefined) {
+            const parsedRoomMetadata = RoomMetadataType.safeParse(this._room.metadata);
+
+            if (!parsedRoomMetadata.success) {
+                console.error(
+                    "Unable to initialize Microsoft teams module due to room metadata parsing error : ",
+                    parsedRoomMetadata.error
+                );
+                return;
+            }
+
+            if (parsedRoomMetadata.data.msteams === true) {
+                (async () => {
+                    try {
+                        const extensionModule = await import("../../../ms-teams/MSTeams");
+                        this.extensionModule = extensionModule.default;
+
+                        this.extensionModule.init(parsedRoomMetadata.data, {
+                            workadventureStatusStore: availabilityStatusStore,
+                            onExtensionModuleStatusChange: ExtensionModuleStatusSynchronization.onStatusChange,
+                            getOauthRefreshToken: this.connection?.getOauthRefreshToken.bind(this.connection),
+                            calendarEventsStoreUpdate: calendarEventsStore.update,
+                            userAccessToken: localUserStore.getAuthToken()!,
+                            adminUrl: ADMIN_URL,
+                            roomId: this.roomUrl,
+                            externalModuleMessage: this.connection!.externalModuleMessage,
+                            openCoWebSite: openCoWebSiteWithoutSource,
+                            closeCoWebsite,
+                        });
+                        // TODO change that to check if the calendar synchro is enabled from admin
+                        if (parsedRoomMetadata.data.teamsstings.calendar) isActivatedStore.set(true);
+                        extensionModuleStore.set(this.extensionModule);
+                    } catch (error) {
+                        console.warn("Extension module initialization cancelled", error);
+                    }
+                })().catch((error) => console.error(error));
+            }
+        }
     }
 
     private subscribeToStores(): void {
@@ -2669,13 +2720,7 @@ ${escapedMessage}
         });
 
         iframeListener.registerAnswerer("closeCoWebsite", (coWebsiteId) => {
-            const coWebsite = coWebsiteManager.getCoWebsiteById(coWebsiteId);
-
-            if (!coWebsite) {
-                throw new Error("Unknown co-website");
-            }
-
-            return coWebsiteManager.closeCoWebsite(coWebsite);
+            return closeCoWebsite(coWebsiteId);
         });
 
         iframeListener.registerAnswerer("closeCoWebsites", () => {
