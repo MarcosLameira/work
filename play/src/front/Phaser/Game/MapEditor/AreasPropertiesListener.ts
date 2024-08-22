@@ -5,6 +5,7 @@ import {
     FocusablePropertyData,
     JitsiRoomPropertyData,
     ListenerMegaphonePropertyData,
+    MatrixRoomPropertyData,
     OpenWebsitePropertyData,
     PersonalAreaAccessClaimMode,
     PersonalAreaPropertyData,
@@ -24,7 +25,7 @@ import { localUserStore } from "../../../Connection/LocalUserStore";
 import { Room } from "../../../Connection/Room";
 import { JITSI_PRIVATE_MODE, JITSI_URL } from "../../../Enum/EnvironmentVariable";
 import { audioManagerFileStore, audioManagerVisibilityStore } from "../../../Stores/AudioManagerStore";
-import { chatZoneLiveStore } from "../../../Stores/ChatStore";
+import { chatVisibilityStore, chatZoneLiveStore } from "../../../Stores/ChatStore";
 /**
  * @DEPRECATED - This is the old way to show trigger message
  import { layoutManagerActionStore } from "../../../Stores/LayoutManagerStore";
@@ -44,7 +45,9 @@ import { mapEditorAskToClaimPersonalAreaStore } from "../../../Stores/MapEditorS
 import { requestVisitCardsStore, selectedChatIDRemotePlayerStore } from "../../../Stores/GameStore";
 import { isMediaBreakpointUp } from "../../../Utils/BreakpointsUtils";
 import { MessageUserJoined } from "../../../Connection/ConnexionModels";
+import { navChat, selectedRoom } from "../../../Chat/Stores/ChatStore";
 import { Area } from "../../Entity/Area";
+import { ChatRoom } from "../../../Chat/Connection/ChatConnection";
 
 export class AreasPropertiesListener {
     private scene: GameScene;
@@ -191,6 +194,11 @@ export class AreasPropertiesListener {
 
                 break;
             }
+            case "matrixRoomPropertyData": {
+                this.handleMatrixRoomAreaOnEnter(property);
+                break;
+            }
+
             default: {
                 break;
             }
@@ -252,6 +260,13 @@ export class AreasPropertiesListener {
                 this.handlePersonalAreaPropertyOnEnter(newProperty, area);
                 break;
             }
+            case "matrixRoomPropertyData": {
+                newProperty = newProperty as typeof oldProperty;
+                this.handleMatrixRoomAreaOnEnter(newProperty);
+                this.handleMatrixRoomAreaOnLeave(oldProperty);
+                break;
+            }
+
             case "silent":
             default: {
                 break;
@@ -291,6 +306,10 @@ export class AreasPropertiesListener {
             }
             case "personalAreaPropertyData": {
                 this.handlePersonalAreaPropertyOnLeave(area);
+                break;
+            }
+            case "matrixRoomPropertyData": {
+                this.handleMatrixRoomAreaOnLeave(property);
                 break;
             }
             default: {
@@ -536,6 +555,26 @@ export class AreasPropertiesListener {
         }
     }
 
+    private handleMatrixRoomAreaOnEnter(property: MatrixRoomPropertyData) {
+        if (this.scene.connection) {
+            this.scene.connection
+                .queryEnterChatRoomArea(property.matrixRoomId)
+                .then(() => {
+                    return this.scene.chatConnection.joinRoom(property.matrixRoomId);
+                })
+                .then((room: ChatRoom) => {
+                    if (!room) return;
+                    selectedRoom.set(room);
+                    navChat.set("chat");
+                    chatZoneLiveStore.set(true);
+                    if (property.shouldOpenAutomatically) chatVisibilityStore.set(true);
+                })
+                .catch((error) => console.error(error));
+
+            return;
+        }
+    }
+
     private handlePersonalAreaPropertyOnEnter(
         property: PersonalAreaPropertyData,
         areaData: AreaData,
@@ -710,6 +749,25 @@ export class AreasPropertiesListener {
             requestVisitCardsStore.set(null);
         }
         area?.unHighLightArea();
+    }
+
+    private handleMatrixRoomAreaOnLeave(property: MatrixRoomPropertyData) {
+        const actualRoom = get(selectedRoom);
+        const chatVisibility = get(chatVisibilityStore);
+
+        if (actualRoom?.id === property.matrixRoomId && chatVisibility) {
+            chatVisibilityStore.set(false);
+            selectedRoom.set(undefined);
+        }
+        chatZoneLiveStore.set(false);
+
+        get(this.scene.chatConnection.rooms)
+            .find((room) => room.id === property.matrixRoomId)
+            ?.leaveRoom();
+
+        if (this.scene.connection) {
+            this.scene.connection.emitLeaveChatRoomArea(property.matrixRoomId);
+        }
     }
 
     private openCoWebsiteFunction(

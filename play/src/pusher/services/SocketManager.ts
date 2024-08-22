@@ -10,6 +10,8 @@ import {
     BanPlayerMessage,
     ChatMembersAnswer,
     ChatMembersQuery,
+    CreateChatRoomForAreaAnswer,
+    CreateChatRoomForAreaQuery,
     EmoteEventMessage,
     ErrorApiData,
     ErrorMessage,
@@ -65,6 +67,7 @@ import { gaugeManager } from "./GaugeManager";
 import { apiClientRepository } from "./ApiClientRepository";
 import { adminService } from "./AdminService";
 import { ShortMapDescription } from "./ShortMapDescription";
+import { matrixProvider } from "./MatrixProvider";
 
 const debug = Debug("socket");
 
@@ -1452,6 +1455,58 @@ export class SocketManager implements ZoneEventListener {
                 senderUserId: socketData.userId,
             },
         });
+    }
+
+    async leaveChatRoomArea(socket: Socket): Promise<void> {
+        const { chatID, currentChatRoomArea } = socket.getUserData();
+
+        if (!chatID || !currentChatRoomArea) {
+            //TODO : msg error
+            return Promise.reject(new Error(""));
+        }
+
+        Promise.all(
+            currentChatRoomArea.map((chatRoomAreaID) => matrixProvider.kickUserFromRoom(chatID, chatRoomAreaID))
+        )
+            .then(() => {
+                return Promise.resolve();
+            })
+            .catch((error) => {
+                return Promise.reject(new Error(error));
+            });
+    }
+
+    async handleCreateChatRoomForAreaQuery(
+        chatMemberQuery: CreateChatRoomForAreaQuery
+    ): Promise<CreateChatRoomForAreaAnswer> {
+        const chatRoomID = await matrixProvider.createRoomForArea();
+        return {
+            chatRoomID,
+        };
+    }
+
+    handleLeaveChatRoomArea(socket: Socket, chatRoomAreaToLeave: string) {
+        const socketData = socket.getUserData();
+        socketData.currentChatRoomArea = socketData.currentChatRoomArea.filter(
+            (ChatRoomArea) => ChatRoomArea !== chatRoomAreaToLeave
+        );
+    }
+
+    async handleEnterChatRoomAreaQuery(socket: Socket, roomID: string): Promise<void> {
+        const socketData = socket.getUserData();
+        if (!socketData.chatID) {
+            return Promise.reject(new Error("Error: Chat ID not found"));
+        }
+        socketData.currentChatRoomArea.push(roomID);
+        return matrixProvider.inviteUserToRoom(socketData.chatID, roomID).catch((error) => console.error(error));
+    }
+
+    async handleChangeChatRoomAreaName(roomID: string, newName: string): Promise<void> {
+        return matrixProvider.changeRoomName(roomID, newName);
+    }
+
+    async handleDeleteChatRoomArea(roomID: string): Promise<void> {
+        return matrixProvider.deleteRoom(roomID);
     }
 }
 

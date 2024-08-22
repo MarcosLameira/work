@@ -40,6 +40,7 @@ import {
     RoomShortDescription,
     ServerToClientMessage as ServerToClientMessageTsProto,
     SetPlayerDetailsMessage as SetPlayerDetailsMessageTsProto,
+    ChangeChatRoomAreaNameMessage as ChangeChatRoomAreaNameMessageTsProto,
     SetPlayerVariableMessage_Scope,
     TokenExpiredMessage,
     UpdateSpaceFilterMessage,
@@ -65,6 +66,7 @@ import {
     PublicEventFrontToPusher,
     PrivateEventFrontToPusher,
     SpaceUser,
+    CreateChatRoomForAreaAnswer,
 } from "@workadventure/messages";
 import { slugify } from "@workadventure/shared-utils/src/Jitsi/slugify";
 import { BehaviorSubject, Subject } from "rxjs";
@@ -774,6 +776,19 @@ export class RoomConnection implements RoomConnection {
             message: {
                 $case: "setPlayerDetailsMessage",
                 setPlayerDetailsMessage: message,
+            },
+        });
+    }
+
+    public emitChatRoomAreaNameChange(roomID: string, name: string): void {
+        const message = ChangeChatRoomAreaNameMessageTsProto.fromPartial({
+            roomID,
+            name,
+        });
+        this.send({
+            message: {
+                $case: "changeChatRoomAreaNameMessage",
+                changeChatRoomAreaNameMessage: message,
             },
         });
     }
@@ -1560,6 +1575,21 @@ export class RoomConnection implements RoomConnection {
         return answer.chatMembersAnswer;
     }
 
+    public async queryCreateChatRoomForArea(areaID: string): Promise<CreateChatRoomForAreaAnswer> {
+        const answer = await this.query({
+            $case: "createChatRoomForAreaQuery",
+            createChatRoomForAreaQuery: {
+                areaID,
+            },
+        });
+
+        if (answer.$case !== "createChatRoomForAreaAnswer") {
+            throw new Error("Unexpected answer");
+        }
+
+        return answer.createChatRoomForAreaAnswer;
+    }
+
     public emitUpdateChatId(email: string, chatId: string) {
         if (chatId && email)
             this.send({
@@ -1571,6 +1601,43 @@ export class RoomConnection implements RoomConnection {
                     },
                 },
             });
+    }
+
+    public async queryEnterChatRoomArea(roomID: string): Promise<void> {
+        const answer = await this.query({
+            $case: "enterChatRoomAreaQuery",
+            enterChatRoomAreaQuery: {
+                roomID,
+            },
+        });
+
+        if (answer.$case !== "enterChatRoomAreaAnswer") {
+            throw new Error("Unexpected answer");
+        }
+
+        return;
+    }
+
+    public emitLeaveChatRoomArea(roomID: string): void {
+        this.send({
+            message: {
+                $case: "leaveChatRoomAreaMessage",
+                leaveChatRoomAreaMessage: {
+                    roomID,
+                },
+            },
+        });
+    }
+
+    public emitDeleteChatRoomArea(roomID: string): void {
+        this.send({
+            message: {
+                $case: "deleteChatRoomAreaMessage",
+                deleteChatRoomAreaMessage: {
+                    roomID,
+                },
+            },
+        });
     }
 
     private resetPingTimeout(): void {

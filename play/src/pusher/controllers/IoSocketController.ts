@@ -505,6 +505,7 @@ export class IoSocketController {
                             spacesFilters: new Map<string, SpaceFilterMessage[]>(),
                             chatID,
                             world: userData.world,
+                            currentChatRoomArea: [],
                         };
 
                         /* This immediately calls open handler, you must not use res after this call */
@@ -810,6 +811,32 @@ export class IoSocketController {
                             );
                             break;
                         }
+                        case "leaveChatRoomAreaMessage": {
+                            socketManager.handleLeaveChatRoomArea(
+                                socket,
+                                message.message.leaveChatRoomAreaMessage.roomID
+                            );
+                            break;
+                        }
+                        case "changeChatRoomAreaNameMessage": {
+                            socketManager
+                                .handleChangeChatRoomAreaName(
+                                    message.message.changeChatRoomAreaNameMessage.roomID,
+                                    message.message.changeChatRoomAreaNameMessage.name
+                                )
+                                .catch((error) => {
+                                    console.error(error);
+                                });
+                            break;
+                        }
+                        case "deleteChatRoomAreaMessage": {
+                            socketManager
+                                .handleDeleteChatRoomArea(message.message.deleteChatRoomAreaMessage.roomID)
+                                .catch((error) => {
+                                    console.error(error);
+                                });
+                            break;
+                        }
                         case "queryMessage": {
                             try {
                                 const answerMessage: AnswerMessage = {
@@ -817,7 +844,9 @@ export class IoSocketController {
                                 };
                                 switch (message.message.queryMessage.query?.$case) {
                                     case "roomTagsQuery": {
-                                        await socketManager.handleRoomTagsQuery(socket, message.message.queryMessage);
+                                        await socketManager
+                                            .handleRoomTagsQuery(socket, message.message.queryMessage)
+                                            .catch((error) => console.error(error));
                                         break;
                                     }
                                     case "embeddableWebsiteQuery": {
@@ -878,6 +907,33 @@ export class IoSocketController {
                                             $case: "getMemberAnswer",
                                             getMemberAnswer,
                                         };
+                                        this.sendAnswerMessage(socket, answerMessage);
+                                        break;
+                                    }
+                                    case "createChatRoomForAreaQuery": {
+                                        const createChatRoomForAreaAnswer =
+                                            await socketManager.handleCreateChatRoomForAreaQuery(
+                                                message.message.queryMessage.query.createChatRoomForAreaQuery
+                                            );
+
+                                        answerMessage.answer = {
+                                            $case: "createChatRoomForAreaAnswer",
+                                            createChatRoomForAreaAnswer,
+                                        };
+                                        this.sendAnswerMessage(socket, answerMessage);
+                                        break;
+                                    }
+                                    case "enterChatRoomAreaQuery": {
+                                        await socketManager.handleEnterChatRoomAreaQuery(
+                                            socket,
+                                            message.message.queryMessage.query.enterChatRoomAreaQuery.roomID
+                                        );
+
+                                        answerMessage.answer = {
+                                            $case: "enterChatRoomAreaAnswer",
+                                            enterChatRoomAreaAnswer: {},
+                                        };
+
                                         this.sendAnswerMessage(socket, answerMessage);
                                         break;
                                     }
@@ -1035,6 +1091,8 @@ export class IoSocketController {
                     socketData.disconnecting = true;
                     socketManager.leaveRoom(socket);
                     socketManager.leaveSpaces(socket);
+                    socketManager.leaveChatRoomArea(socket).catch((error) => console.error(error));
+                    socketData.currentChatRoomArea = [];
                 } catch (e) {
                     Sentry.captureException(`An error occurred on "disconnect" ${e}`);
                     console.error(e);

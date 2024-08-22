@@ -29,6 +29,8 @@
     import PersonalAreaPropertyEditor from "../PropertyEditor/PersonalAreaPropertyEditor.svelte";
     import RightsPropertyEditor from "../PropertyEditor/RightsPropertyEditor.svelte";
     import { IconChevronDown, IconChevronRight } from "../../Icons";
+    import MatrixRoomPropertyEditor from "../PropertyEditor/MatrixRoomPropertyEditor.svelte";
+    import { gameManager } from "../../../Phaser/Game/GameManager";
 
     let properties: AreaDataProperties = [];
     let areaName = "";
@@ -45,6 +47,7 @@
     let showDescriptionField = false;
     let hasPersonalAreaProperty: boolean;
     let hasRightsProperty: boolean;
+    let connection = gameManager.getCurrentGameScene().connection;
 
     let selectedAreaPreviewUnsubscriber = mapEditorSelectedAreaPreviewStore.subscribe((currentAreaPreview) => {
         if (currentAreaPreview) {
@@ -197,6 +200,14 @@
                     accessClaimMode: PersonalAreaAccessClaimMode.enum.dynamic,
                     allowedTags: [],
                     ownerId: null,
+                };
+            case "matrixRoomPropertyData":
+                return {
+                    id,
+                    type,
+                    matrixRoomId: "",
+                    shouldOpenAutomatically: false,
+                    displayName: "",
                 };
             default:
                 throw new Error(`Unknown property type ${type}`);
@@ -433,6 +444,13 @@
                     onAddProperty("openWebsite");
                 }}
             />
+
+            <AddPropertyButtonWrapper
+                property="matrixRoomPropertyData"
+                on:click={() => {
+                    onAddProperty("matrixRoomPropertyData");
+                }}
+            />
         </div>
         <div class="properties-buttons tw-flex tw-flex-row tw-flex-wrap tw-mt-2">
             <AddPropertyButtonWrapper
@@ -638,6 +656,15 @@
                             personalAreaPropertyData={property}
                             on:close={({ detail }) => {
                                 onDeleteProperty(property.id, detail);
+                            }}
+                            on:change={({ detail }) => onUpdateProperty(property, detail)}
+                        />
+                    {:else if property.type === "matrixRoomPropertyData"}
+                        <MatrixRoomPropertyEditor
+                            {property}
+                            on:close={({ detail }) => {
+                                onDeleteProperty(property.id, detail);
+                                if (connection) connection.emitDeleteChatRoomArea(property.matrixRoomId);
                             }}
                             on:change={({ detail }) => onUpdateProperty(property, detail)}
                         />
