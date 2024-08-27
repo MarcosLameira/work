@@ -1,114 +1,114 @@
-# Setting up a self-hosted production environment
+#Configurando um ambiente de produção auto-hospedado
 
-## Do you need self-hosting?
+## Você precisa de auto-hospedagem?
 
-WorkAdventure is a powerful and versatile platform that enables users to create immersive and interactive virtual
-environments for remote collaboration, events, and games. As an open project, WorkAdventure offers users the flexibility
-and freedom to host the platform on their own servers. However, self-hosting WorkAdventure requires technical expertise,
-infrastructure, and maintenance, which may not be feasible or practical for all users.
+WorkAdventure é uma plataforma poderosa e versátil que permite aos usuários criar ambientes virtuais imersivos e interativos
+ambientes para colaboração remota, eventos e jogos. Como um projeto aberto, WorkAdventure oferece aos usuários a flexibilidade
+e liberdade para hospedar a plataforma em seus próprios servidores. No entanto, a WorkAdventure auto-hospedada requer conhecimento técnico,
+infraestrutura e manutenção, o que pode não ser viável ou prático para todos os usuários.
 
-In order to self-host WorkAdventure, you will need:
+Para auto-hospedar o WorkAdventure, você precisará de:
 
-- at least one server for WorkAdventure, with a public facing IP and a DNS name
-- in addition, WorkAdventure requires to have 2 additional services: Jitsi and Coturn. In a typical setup, those services will be hosted on 2 additional servers (both with a public facing IP address and a DNS name)
-- a strong technical expertise regarding Docker and containers
-- a good understanding of networking concepts
-- ... and time (!), to keep up with the updates (about once a month)
+- pelo menos um servidor para WorkAdventure, com IP público e nome DNS
+- além disso, WorkAdventure exige 2 serviços adicionais: Jitsi e Coturn. Em uma configuração típica, esses serviços serão hospedados em 2 servidores adicionais (ambos com endereço IP público e nome DNS)
+- forte conhecimento técnico em Docker e containers
+- uma boa compreensão dos conceitos de rede
+- ... e tempo (!), para acompanhar as atualizações (cerca de uma vez por mês)
 
-Depending on your use-case, you might want to check the SAAS (i.e. hosted) version of WorkAdventure.
-It provides:
+Dependendo do seu caso de uso, você pode querer verificar a versão SAAS (ou seja, hospedada) do WorkAdventure.
+Ele fornece:
 
-- **Fast and easy setup**: with just a few clicks, you can sign up, create your first virtual space, invite your team or friends, and start exploring and collaborating in real-time
-- **Automatic upgrades**: you don't have to worry about upgrading the platform yourself. WorkAdventure is a fast-evolving
-  technology, with frequent updates, bug fixes, and new features. The SAAS version takes care of all the upgrades and ensures that you always have access to the latest and greatest version of the platform.
-- **An advanced dashboard**: you can manage your virtual spaces, users, and get fine-grained access rights from the dashboard.
-  You can also create and manage your own custom domains and logos.
-- **Lower costs and resources**: While self-hosting WorkAdventure may seem like a cost-effective option at first glance,
-  it can quickly become expensive and resource-intensive in the long run. Self-hosting requires not only server hardware
-  but also bandwidth, storage, and maintenance costs. Moreover, self-hosting requires technical expertise, time, and
-  effort to set up, configure, and troubleshoot the infrastructure. The SAAS version of WorkAdventure, on the other hand,
-  offers a pay-as-you-go pricing model that scales with your usage and needs. You only pay for what you use (no need for those costly video servers),
-  and you don't have to worry about upfront investments, hidden fees, or unpredictable costs. And most importantly,
-  you contribute to making WorkAdventure a sustainable product 👍
+- **Configuração rápida e fácil**: com apenas alguns cliques, você pode se inscrever, criar seu primeiro espaço virtual, convidar sua equipe ou amigos e começar a explorar e colaborar em tempo real
+- **Atualizações automáticas**: você não precisa se preocupar em atualizar a plataforma sozinho. WorkAdventure é uma plataforma em rápida evolução
+  tecnologia, com atualizações frequentes, correções de bugs e novos recursos. A versão SAAS cuida de todas as atualizações e garante que você sempre tenha acesso à melhor e mais recente versão da plataforma.
+- **Um painel avançado**: você pode gerenciar seus espaços virtuais, usuários e obter direitos de acesso detalhados no painel.
+  Você também pode criar e gerenciar seus próprios domínios e logotipos personalizados.
+- **Custos e recursos mais baixos**: embora a auto-hospedagem do WorkAdventure possa parecer uma opção econômica à primeira vista,
+  pode rapidamente se tornar caro e consumir muitos recursos no longo prazo. A auto-hospedagem requer não apenas hardware de servidor
+  mas também custos de largura de banda, armazenamento e manutenção. Além disso, a auto-hospedagem requer conhecimento técnico, tempo e
+  esforço para instalar, configurar e solucionar problemas da infraestrutura. A versão SAAS do WorkAdventure, por outro lado,
+  oferece um modelo de preços pré-pago que se adapta ao seu uso e necessidades. Você paga apenas pelo que usa (não há necessidade de servidores de vídeo caros),
+  e você não precisa se preocupar com investimentos iniciais, taxas ocultas ou custos imprevisíveis. E o mais importante,
+  você contribui para tornar o WorkAdventure um produto sustentável 👍
 
-Also, the WorkAdventure SAAS version provides a generous free-plan. Head over at https://workadventu.re to start right away.
+Além disso, a versão WorkAdventure SAAS oferece um plano gratuito generoso. Acesse https://workadventu.re para começar imediatamente.
 
-Still interested in self-hosting? All right! Read below.
+Ainda interessado em auto-hospedagem? Tudo bem! Leia abaixo.
 
-## A high level view of a WorkAdventure environment
+## Uma visão de alto nível de um ambiente WorkAdventure
 
-In order to host WorkAdventure you will need to host:
+Para hospedar WorkAdventure você precisará hospedar:
 
-- **WorkAdventure** itself
-- **Coturn**: this is a service that proxies the WebRTC video signal in case a user is on a network that does not allow
-  peer-to-peer connections. Coturn is optional, but without Coturn, approximately 15% of the users will fail to establish
-  a audio/video connection.
-- **Jitsi**: in large meeting rooms, Jitsi is used to broadcast video streams to all users.
+- **WorkAdventure** em si
+- **Coturn**: é um serviço que faz proxy do sinal de vídeo WebRTC caso o usuário esteja em uma rede que não permite
+  conexões ponto a ponto. O Coturn é opcional, mas sem o Coturn, aproximadamente 15% dos usuários não conseguirão estabelecer
+  uma conexão de áudio/vídeo.
+- **Jitsi**: em grandes salas de reunião, o Jitsi é usado para transmitir streams de vídeo para todos os usuários.
 
-```mermaid
-flowchart LR
+```sereia
+fluxograma LR
   
-    subgraph Servers
-    WorkAdventure
+    subgráfico Servidores
+    TrabalhoAventura
     Jitsi
-    Coturn
-    end
-    Browser1["Your browser"]
-    Browser1-->WorkAdventure
-    Browser1-->Jitsi
-    Browser1-->Coturn
+    Coturno
+    fim
+    Navegador1["Seu navegador"]
+    Navegador1 -> WorkAdventure
+    Navegador1 -> Jitsi
+    Navegador1 -> Coturn
 ```
 
-> [!WARNING]  
-> In the rest of this document, we will describe how to install the WorkAdventure server. We will leave Jitsi
-> and Coturn installs out of scope.
+> [!AVISO]  
+> No restante deste documento, descreveremos como instalar o servidor WorkAdventure. Vamos deixar o Jitsi
+> e Coturn instala fora do escopo.
 
-Jitsi install guide: https://jitsi.github.io/handbook/docs/devops-guide/  
-Coturn install guide: https://meetrix.io/blog/webrtc/coturn/installation.html
+Guia de instalação do Jitsi: https://jitsi.github.io/handbook/docs/devops-guide/  
+Guia de instalação do Coturn: https://meetrix.io/blog/webrtc/coturn/installation.html
 
-## Installation method for the WorkAdventure server
+## Método de instalação para o servidor WorkAdventure
 
-WorkAdventure is a set of different programs. There are countless ways of hosting WorkAdventure. In the past, we have
-seen people using Ansible, NixOS or Kubernetes to host WorkAdventure. You can host each component on a different
-domain name or run a "single-domain" install. The core maintainers of this project cannot possibly support all possible
-installation methods.
+WorkAdventure é um conjunto de programas diferentes. Existem inúmeras maneiras de hospedar WorkAdventure. No passado, tivemos
+vi pessoas usando Ansible, NixOS ou Kubernetes para hospedar WorkAdventure. Você pode hospedar cada componente em um local diferente
+nome de domínio ou execute uma instalação de "domínio único". Os principais mantenedores deste projeto não podem apoiar todos os possíveis
+métodos de instalação.
 
-So we are maintaining TWO installation methods:
+Portanto, estamos mantendo DOIS métodos de instalação:
 
-1. using Docker Compose
-2. using Kubernetes (Helm chart)
+1. usando Docker Compose
+2. usando Kubernetes (gráfico Helm)
 
-### Docker Compose
+### Docker Compor
 
-The easiest way to install WorkAdventure if you do not have a Kubernetes cluster is to use Docker Compose.
+A maneira mais fácil de instalar o WorkAdventure se você não tiver um cluster Kubernetes é usar o Docker Compose.
 
-- **WorkAdventure works as a set of Docker containers.**
-- **We provide Docker images for each container in the Docker hub registry, and a docker-compose file to easily start the containers.**
-- **The proposed install runs on a single domain (you will still need 2 additional domain names for Jitsi and Coturn).**
-- **We assume you have one physical server with root access and Docker installed. The server has a public IP address.**
+- **WorkAdventure funciona como um conjunto de contêineres Docker.**
+- **Fornecemos imagens do Docker para cada contêiner no registro do hub do Docker e um arquivo docker-compose para iniciar facilmente os contêineres.**
+- **A instalação proposta é executada em um único domínio (você ainda precisará de 2 nomes de domínio adicionais para Jitsi e Coturn).**
+- **Presumimos que você tenha um servidor físico com acesso root e Docker instalado. O servidor possui um endereço IP público.**
 
-The installation below is well tested on each release and is known to work.
+A instalação abaixo foi bem testada em cada versão e funciona.
 
-Of course, every production environment is different and this docker-compose file will not
-fit all use cases. The file is yours. Fill free to modify it. Fill free to use it as a starting point to host the
-solution on Kubernetes if you want.
+É claro que cada ambiente de produção é diferente e este arquivo docker-compose não será
+se adapta a todos os casos de uso. O arquivo é seu. Preencha gratuitamente para modificá-lo. Preencha gratuitamente para usá-lo como ponto de partida para hospedar o
+solução no Kubernetes, se desejar.
 
-If you have specific needs for a custom deployment, the WorkAdventure company can offer paid support. Don't hesitate to
-contact us at hello@workadventu.re. We also provide support to integrate WorkAdventure in your existing application.
+Se você tiver necessidades específicas de implantação personalizada, a empresa WorkAdventure pode oferecer suporte pago. Não hesite em
+entre em contato conosco em hello@workadventu.re. Também fornecemos suporte para integrar o WorkAdventure em seu aplicativo existente.
 
-Click here to see the [Docker Compose install guide](../../../contrib/docker/README.md).
+Clique aqui para ver o [guia de instalação do Docker Compose](../../../contrib/docker/README.md).
 
-### Helm chart for Kubernetes
+### Gráfico Helm para Kubernetes
 
-If you have a Kubernetes cluster, you can use the Helm chart to install WorkAdventure.
+Se você tiver um cluster Kubernetes, poderá usar o gráfico Helm para instalar o WorkAdventure.
 
-The Helm Chart is well tested on each release and is known to work.
-It is newer than the Docker Compose install and might change more frequently in the coming month. Therefore,
-we do not (yet) guarantee the absence of breaking changes between minor versions.
+O Helm Chart é bem testado em cada versão e funciona.
+É mais recente que a instalação do Docker Compose e pode mudar com mais frequência no próximo mês. Portanto,
+não garantimos (ainda) a ausência de alterações significativas entre versões secundárias.
 
-Click here to see the [Helm chart install guide](../../../contrib/helm/README.md).
+Clique aqui para ver o [guia de instalação do gráfico do Helm](../../../contrib/helm/README.md).
 
-### Alternative installation methods
+### Métodos alternativos de instalação
 
-For any question related to non-standard deployments, you can ask the community on the "server-sorcery" Discord
-channel: [![Discord](https://img.shields.io/discord/821338762134290432?label=Discord)](https://discord.gg/G6Xh9ZM9aR)
+Para qualquer dúvida relacionada a implantações fora do padrão, você pode perguntar à comunidade no Discord "server-sorcery"
+canal: [![Discord](https://img.shields.io/discord/821338762134290432?label=Discord)](https://discord.gg/G6Xh9ZM9aR)
