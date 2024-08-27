@@ -6,71 +6,58 @@
 Live demo [here](https://play.staging.workadventu.re/@/tcm/workadventure/wa-village).
 
 # WorkAdventure
+WorkAdventure é um espaço de trabalho colaborativo baseado na web apresentado na forma de um Videogame de 16 bits.
+No WorkAdventure você pode circular pelo seu escritório e conversar com seus colegas (usando um sistema de videochat, acionado quando você aborda alguém).
+Veja mais recursos para seu escritório virtual: https://workadventu.re/virtual-office
 
-WorkAdventure is a web-based collaborative workspace presented in the form of a
-16-bit video game.
+## Recursos da comunidade
+Confira os recursos desenvolvidos pela comunidade WorkAdventure em [awesome-workadventure](https://github.com/workadventure/awesome-workadventure)
 
-In WorkAdventure you can move around your office and talk to your colleagues (using a video-chat system, triggered when you approach someone).
+## Configurando um ambiente de produção
+Oferecemos suporte a duas maneiras de configurar um ambiente de produção:
+- usando Docker Compose
+- ou usando um gráfico Helm para Kubernetes
 
-See more features for your virtual office: https://workadventu.re/virtual-office
+Consulte o guia [Configurando um ambiente de produção](docs/others/self-hosting/install.md) para obter mais informações.
 
-## Community resources
+> [!NOTA]
+> WorkAdventure também fornece uma [versão hospedada](https://workadventu.re) do aplicativo. Usar a versão hospedada é 
+> a maneira mais fácil de começar e nos ajuda a manter o projeto vivo.
 
-Check out resources developed by the WorkAdventure community at [awesome-workadventure](https://github.com/workadventure/awesome-workadventure)
+## Configurando um ambiente de desenvolvimento
 
-## Setting up a production environment
+> [!NOTA]
+> Estas instruções de instalação são apenas para desenvolvimento local. Eles não funcionarão
+> servidores remotos, pois ambientes locais não possuem certificados HTTPS.
 
-We support 2 ways to set up a production environment:
+Instale o Docker e clone este repositório.
 
-- using Docker Compose
-- or using a Helm chart for Kubernetes
-
-Please check the [Setting up a production environment](docs/others/self-hosting/install.md) guide for more information.
-
-> [!NOTE]
-> WorkAdventure also provides a [hosted version](https://workadventu.re) of the application. Using the hosted version is 
-> the easiest way to get started and helps us to keep the project alive.
-
-## Setting up a development environment
-
-> [!NOTE]
-> These installation instructions are for local development only. They will not work on
-> remote servers as local environments do not have HTTPS certificates.
-
-Install Docker and clone this repository.
-
-> [!WARNING]
-> If you are using Windows, make sure the End-Of-Line character is not modified by the cloning process by setting
-> the `core.autocrlf` setting to false: `git config --global core.autocrlf false`
-
-Run:
+> [!AVISO]
+> Se você estiver usando Windows, certifique-se de que o caractere de fim de linha não seja modificado pelo processo de clonagem configurando
+> a configuração `core.autocrlf` como false: `git config --global core.autocrlf false`
+Correr:
 
 ```
 cp .env.template .env
 docker-compose up
 ```
 
-The environment will start.
+O ambiente começará.
 
-You should now be able to browse to http://play.workadventure.localhost/ and see the application.
-You can view the Traefik dashboard at http://traefik.workadventure.localhost
+Agora você deve conseguir navegar até http://play.workadventure.localhost/ e ver o aplicativo.
+Você pode visualizar o painel do Traefik em http://traefik.workadventure.localhost
 
-Note: on some OSes, you will need to add this line to your `/etc/hosts` file:
-
+Nota: em alguns sistemas operacionais, você precisará adicionar esta linha ao seu arquivo `/etc/hosts`:
 **/etc/hosts**
 ```
-127.0.0.1 oidc.workadventure.localhost redis.workadventure.localhost play.workadventure.localhost traefik.workadventure.localhost matrix.workadventure.localhost extra.workadventure.localhost icon.workadventure.localhost map-storage.workadventure.localhost uploader.workadventure.localhost maps.workadventure.localhost api.workadventure.localhost front.workadventure.localhost
+127.0.0.1 oidc.workadventure.localhost redis.workadventure.localhost play.workadventure.localhost traefik.workadventure.localhost matriz.workadventure.localhost extra.workadventure.localhost icon.workadventure.localhost map-storage.workadventure.localhost uploader.workadventure.localhost mapas.workadventure.localhost api.workadventure.localhost front.workadventure.localhost
 ```
 
-You can also start WorkAdventure + a test OpenID connect server using:
-
+Você também pode iniciar o WorkAdventure + um servidor de teste OpenID Connect usando:
 ```console
 $ docker-compose -f docker-compose.yaml -f docker-compose-oidc.yaml up
 ```
 
-(Test user is "User1" and his password is "pwd")
-
-
-### Troubleshooting
-
-See our [troubleshooting guide](docs/dev/troubleshooting.md).
+(O usuário de teste é "User1" e sua senha é "pwd")
+### Solução de problemas
+Consulte nosso [guia de solução de problemas](docs/dev/troubleshooting.md).
