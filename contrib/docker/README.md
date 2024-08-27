@@ -1,216 +1,215 @@
-# Self-hosting WorkAdventure using Docker Compose
+# Auto-hospedagem do WorkAdventure usando o Docker Compose
 
-> [!WARNING]
-> If you haven't already, please check the [Setting up a self-hosted production environment](../../docs/others/self-hosting/install.md) guide
-> before getting started.
+> [!AVISO]
+> Se você ainda não o fez, consulte o guia [Configurando um ambiente de produção auto-hospedado](../../docs/others/self-hosting/install.md)
+> antes de começar.
 
-## Hardware requirements
+## Requisitos de hardware
 
-In order to perform the install, you will need a server, with a domain name pointing to the server.
+Para executar a instalação, você precisará de um servidor, com um nome de domínio apontando para o servidor.
+Um servidor relativamente pequeno (2 CPUs, 4 GB de RAM) permitirá que você hospede reuniões com até 300 usuários simultâneos.
 
-A relatively small server (2 CPUs, 4GB RAM) will allow you to host meetings with up to 300 concurrent users.
+O servidor WorkAdventure em si não precisa de muitos recursos. No entanto, os servidores Coturn e Jitsi precisarão ser
+muito mais poderosos, pois estão lidando com os fluxos de vídeo. Consulte a documentação do Jitsi e do Coturn para dimensionar corretamente
+esses servidores.
 
-The WorkAdventure server itself does not need many resources. However, the Coturn and Jitsi servers will need to be
-much more powerful, as they are handling the video streams. See the Jitsi and Coturn documentation for correctly
-sizing those servers.
+> [!AVISO]
+> O WorkAdventure usa WebRTC para conexões de áudio/vídeo. O WebRTC, por sua vez, exige uma conexão HTTPS com um
+> certificado válido. Como resultado, você precisa de um nome de domínio apontando para seu servidor. Você não pode acessar o WorkAdventure diretamente
+> pelo endereço IP do servidor, pois o certificado HTTPS só pode ser emitido para um nome de domínio.
 
-> [!WARNING]  
-> WorkAdventure uses WebRTC for audio/video connections. WebRTC in turns, require an HTTPS connection with a valid
-> certificate. As a result, you need a domain name pointing on your server. You cannot access WorkAdventure directly
-> by the server IP address, as the HTTPS certificate can only be issued for a domain name.
+## A estrutura de instalação padrão
 
-## The default install structure
+O arquivo docker-compose padrão está disponível aqui: [`docker-compose.prod.yaml`](docker-compose.prod.yaml).
 
-The default docker-compose file is available here: [`docker-compose.prod.yaml`](docker-compose.prod.yaml).
+Neste arquivo docker-compose, você encontrará:
 
-In this docker-compose file, you will find:
-
-- A reverse-proxy (Traefik) that dispatches requests to the WorkAdventure containers and handles HTTPS termination. HTTPS certificates will be automatically generated using LetsEncrypt.
-- A play container (NodeJS) that serves static files for the "game" (HTML/JS/CSS) and is the point of entry for users (you can start many if you want to increase performance)
-- A back container (NodeJS) that shares your rooms information
-- A map-storage container (NodeJS) that serves your maps and provides map-editing features
-- An icon container to fetch the favicon of sites imported in iframes
-- A Redis server to store values from variables originating from the Scripting API
+- Um proxy reverso (Traefik) que despacha solicitações para os contêineres do WorkAdventure e manipula a terminação HTTPS. Os certificados HTTPS serão gerados automaticamente usando LetsEncrypt.
+- Um contêiner de jogo (NodeJS) que serve arquivos estáticos para o "jogo" (HTML/JS/CSS) e é o ponto de entrada para os usuários (você pode iniciar muitos se quiser aumentar o desempenho)
+- Um contêiner de retorno (NodeJS) que compartilha as informações das suas salas
+- Um contêiner de armazenamento de mapas (NodeJS) que serve seus mapas e fornece recursos de edição de mapas
+- Um contêiner de ícones para buscar o favicon de sites importados em iframes
+- Um servidor Redis para armazenar valores de variáveis ​​originadas da API de script
 
 ```mermaid
 graph LR
-    A[Browser] --> B(Traefik)
-    subgraph docker-compose
-    B --> D(Play)
-    B --> E(Icon)
-    D --> F(Back)
-    F --> G(Redis)
-    F --> K(Map storage)
-    A --> K(Map storage)
-    end
-    A .-> H(Map)
-    F .-> H
+A[Browser] --> B(Traefik)
+subgraph docker-compose
+B --> D(Play)
+B --> E(Icon)
+D --> F(Back)
+F --> G(Redis)
+F --> K(Map storage)
+A --> K(Map storage)
+end
+A .-> H(Map)
+F .-> H
 ```
 
-> **Note**
-> You can host your maps on the WorkAdventure server itself (using the dedicated map-storage container), or outside
-> of the WorkAdventure server, on any [properly configured HTTP server](../../docs/maps/hosting.md) (Nginx, Apache...). 
-> The default docker-compose file does **not** contain a container dedicated to hosting maps. The documentation and
+> **Observação**
+> Você pode hospedar seus mapas no próprio servidor WorkAdventure (usando o contêiner de armazenamento de mapas dedicado) ou fora
+> do servidor WorkAdventure, em qualquer [servidor HTTP configurado corretamente](../../docs/maps/hosting.md) (Nginx, Apache...).
+> O arquivo docker-compose padrão **não** contém um contêiner dedicado à hospedagem de mapas. A documentação e
 
-## Getting started
+## Começando
 
-> **Note**
-> These installation instructions are for production only. If you are looking to install WorkAdventure
-> on you local development machine, head over to the [main README](../../README.md).
+> **Observação**
+> Estas instruções de instalação são apenas para produção. Se você estiver procurando instalar o WorkAdventure
+> em sua máquina de desenvolvimento local, vá para o [README principal](../../README.md).
 
-### 1. Install Docker
+### 1. Instale o Docker
 
-On your server, install the latest Docker version, along docker-compose.
+No seu servidor, instale a versão mais recente do Docker, junto com o docker-compose.
 
-### 2. Copy deployment files 
+### 2. Copie os arquivos de implantação
 
-Copy the [`.env.prod.template`](.env.prod.template) file on your server, and rename it to `.env`.
-Copy the [`docker-compose.prod.yaml`](docker-compose.prod.yaml) file on your server, and rename it to `docker-compose.yaml`.
+Copie o arquivo [`.env.prod.template`](.env.prod.template) no seu servidor e renomeie-o para `.env`.
+Copie o arquivo [`docker-compose.prod.yaml`](docker-compose.prod.yaml) no seu servidor e renomeie-o para `docker-compose.yaml`.
 
-### 3. Configure your environment
+### 3. Configure seu ambiente
 
-Edit the `.env` file.
+Edite o arquivo `.env`.
 
-For your environment to start, you will need to at least configure:
+Para que seu ambiente seja iniciado, você precisará pelo menos configurar:
 
-- **VERSION**: the version of WorkAdventure to install. See below for more information.
-- **SECRET_KEY**: a random key used to generate JWT secrets
-- **DOMAIN**: your domain name (without any "https://" prefix)
-- **MAP_STORAGE_AUTHENTICATION_USER**: the username for the map-storage container 
-- **MAP_STORAGE_AUTHENTICATION_PASSWORD**: the password for the map-storage container
+- **VERSION**: a versão do WorkAdventure a ser instalada. Veja abaixo para mais informações.
+- **SECRET_KEY**: uma chave aleatória usada para gerar segredos JWT
+- **DOMAIN**: seu nome de domínio (sem nenhum prefixo "https://")
+- **MAP_STORAGE_AUTHENTICATION_USER**: o nome de usuário para o contêiner de armazenamento de mapas
+- **MAP_STORAGE_AUTHENTICATION_PASSWORD**: a senha para o contêiner de armazenamento de mapas
 
-Fill free to look the other environment variables and modify them according to your preferences.
+Fique à vontade para procurar as outras variáveis ​​de ambiente e modificá-las de acordo com suas preferências.
 
-**Selecting the right version:**
+**Selecionando a versão correta:**
 
-By default, the `VERSION` in the `.env` file is set to "master". It means we are targeting the most recent stable version.
+Por padrão, a `VERSION` no arquivo `.env` é definida como "master". Isso significa que estamos mirando na versão estável mais recente.
 
-It is important **to change this**.
+É importante **mudar isso**.
 
-Indeed, the "master" tag is evolving over time and at some point, new environment variables might be required, or new
-containers might be needed. If you keep the VERSION pinned to "master", at some point, your `docker-compose.yaml` file
-will be out of sync with the images.
+De fato, a tag "master" está evoluindo ao longo do tempo e, em algum momento, novas variáveis ​​de ambiente podem ser necessárias, ou novos
+contêineres podem ser necessários. Se você mantiver a VERSÃO fixada em "master", em algum momento, seu arquivo `docker-compose.yaml`
+ficará fora de sincronia com as imagens.
 
-In order to avoid this issue, use a valid tag for the `VERSION`.
+Para evitar esse problema, use uma tag válida para a `VERSÃO`.
 
-The list of tags is available in the [releases page](https://github.com/thecodingmachine/workadventure/releases/).
+A lista de tags está disponível na [página de lançamentos](https://github.com/thecodingmachine/workadventure/releases/).
 
-> **Warning**
-> The VERSION used in the `.env` file must match the `docker-compose.prod.yaml` used.
-> So if you downloaded the `docker-compose.prod.yaml` from the "v1.15.3" release, then please use `VERSION=v1.15.3`
-> in the `.env` file.
+> **Aviso**
+> A VERSÃO usada no arquivo `.env` deve corresponder ao `docker-compose.prod.yaml` usado.
+> Então, se você baixou o `docker-compose.prod.yaml` da versão "v1.15.3", use `VERSION=v1.15.3`
+> no arquivo `.env`.
 
-### 4. Starting the environment
+### 4. Iniciando o ambiente
 
-In the directory containing your `docker-compose.yaml` file and your `.env` file, simply use:
+No diretório que contém seu arquivo `docker-compose.yaml` e seu arquivo `.env`, basta usar:
 
 ```console
 docker-compose up -d
 ```
 
-You can check the logs with:
+Você pode verificar os logs com:
 
 ```console
 docker-compose logs -f
 ```
 
-### 5. Uploading your first map
+### 5. Carregando seu primeiro mapa
 
-Before starting using WorkAdventure, you will need to upload your first map.
+Antes de começar a usar o WorkAdventure, você precisará carregar seu primeiro mapa.
 
-#### Uploading from the map starter kit
+#### Carregando do kit inicial do mapa
 
-Design your own map using the [map starter kit](https://github.com/workadventure/map-starter-kit).
-When you are happy with the result, [follow the steps in the "upload your map documentation"](https://docs.workadventu.re/map-building/tiled-editor/publish/wa-hosted)
+Crie seu próprio mapa usando o [kit inicial do mapa](https://github.com/workadventure/map-starter-kit).
+Quando estiver satisfeito com o resultado, [siga os passos em "carregar sua documentação de mapa"](https://docs.workadventu.re/map-building/tiled-editor/publish/wa-hosted)
 
-#### Checking everything worked
+#### Verificando se tudo funcionou
 
-Open your browser and go to `https://<your-domain>/map-storage/`.
+Abra seu navegador e vá para `https://<seu-domínio>/map-storage/`.
 
-You will be asked to authenticate. Use the credentials you configured in the `.env` file.
+Você será solicitado a autenticar. Use as credenciais que você configurou no arquivo `.env`.
 
-> **Note**
-> Right now, authentication is limited to a single user credential in the map-storage container, 
-> hard coded in the `.env` file. This is not ideal, but works for now (the map-storage container
-> is quite new). Contributions are welcome if you want to improve this.
+> **Observação**
+> No momento, a autenticação é limitada a uma única credencial de usuário no contêiner de armazenamento de mapa,
+> codificado no arquivo `.env`. Isso não é o ideal, mas funciona por enquanto (o contêiner de armazenamento de mapa
+> é bem novo). Contribuições são bem-vindas se você quiser melhorar isso.
 
-You should see a link to the map you just uploaded.
+Você deve ver um link para o mapa que você acabou de carregar.
 
-Are you connected? Congratulations! Share the URL with your friends and start using WorkAdventure!
+Você está conectado? Parabéns! Compartilhe a URL com seus amigos e comece a usar o WorkAdventure!
 
-Not working? Jump to the [troubleshooting section](#troubleshooting).
+Não está funcionando? Vá para a [seção de solução de problemas](#solução de problemas).
 
-### Post-installation steps
+### Etapas pós-instalação
 
-You can now customize your WorkAdventure instance by modifying the `.env` file.
+Agora você pode personalizar sua instância do WorkAdventure modificando o arquivo `.env`.
 
-Please be sure to configure Jitsi, as it is the default video conferencing solution for large room,
-and Turn settings to ensure video is correctly relayed, even if your clients are in a restricted network.
+Certifique-se de configurar o Jitsi, pois é a solução de videoconferência padrão para salas grandes,
+e as configurações do Turn para garantir que o vídeo seja retransmitido corretamente, mesmo se seus clientes estiverem em uma rede restrita.
 
-Keeping your server secure is also important. You can configure the `SECURITY_EMAIL` environment variable
-to receive security notifications from the WorkAdventure core team.
-You will be notified if your WorkAdventure version contains a known security flaw.
+Manter seu servidor seguro também é importante. Você pode configurar a variável de ambiente `SECURITY_EMAIL`
+para receber notificações de segurança da equipe principal do WorkAdventure.
+Você será notificado se sua versão do WorkAdventure contiver uma falha de segurança conhecida.
 
-#### Adding authentication
+#### Adicionando autenticação
 
-WorkAdventure does not provide its own authentication system. Instead, you can connect WorkAdventure to an OpenID Connect
-authentication provider (like Google, GitHub, or any other provider).
+O WorkAdventure não fornece seu próprio sistema de autenticação. Em vez disso, você pode conectar o WorkAdventure a um provedor de autenticação OpenID Connect
+(como Google, GitHub ou qualquer outro provedor).
 
-If you want to connect WorkAdventure to an authentication provider, you can follow the [OpenID Connect documentation](../../docs/dev/openid.md).
+Se você quiser conectar o WorkAdventure a um provedor de autenticação, você pode seguir a [documentação do OpenID Connect](../../docs/dev/openid.md).
 
-When OpenID is configured, you should set up a list of restricted users [allowed to access the inline map editor](../../docs/dev/inline-map-editor.md).
+Quando o OpenID estiver configurado, você deve configurar uma lista de usuários restritos [com permissão para acessar o editor de mapas em linha](../../docs/dev/inline-map-editor.md).
 
-#### Connecting to a chat server
+#### Conectando-se a um servidor de bate-papo
 
-WorkAdventure can connect to a [Matrix server](https://matrix.org/) to provide chat features.
-Matrix is a decentralized chat protocol that allows you to host your own chat server.
+O WorkAdventure pode se conectar a um [servidor Matrix](https://matrix.org/) para fornecer recursos de bate-papo.
+O Matrix é um protocolo de bate-papo descentralizado que permite que você hospede seu próprio servidor de bate-papo.
 
-With Matrix integration configured, you can chat with other users, even when they are not connected to WorkAdventure.
-For instance, a user can chat with you from a Matrix client like Element on his mobile phone, while you are in WorkAdventure.
+Com a integração do Matrix configurada, você pode bater papo com outros usuários, mesmo quando eles não estiverem conectados ao WorkAdventure.
+Por exemplo, um usuário pode conversar com você de um cliente Matrix como o Element em seu celular, enquanto você está no WorkAdventure.
 
-You can follow the [Matrix documentation](../../docs/others/self-hosting/matrix.md) to learn how to configure your Matrix server
-and connect it to WorkAdventure.
+Você pode seguir a [documentação do Matrix](../../docs/others/self-hosting/matrix.md) para aprender como configurar seu servidor Matrix
+e conectá-lo ao WorkAdventure.
 
-## Upgrading WorkAdventure
+## Atualizando o WorkAdventure
 
-The upgrade path will depend on the installation of WorkAdventure you are using.
+O caminho de atualização dependerá da instalação do WorkAdventure que você está usando.
 
-#### If you are using the `docker-compose.prod.yaml` file without any changes:
+#### Se você estiver usando o arquivo `docker-compose.prod.yaml` sem nenhuma alteração:
 
-- Download the `docker-compose.prod.yaml` for the version you want to upgrade to and replace it on your server
-- Now, edit the `.env` file and change the `VERSION` to the matching version.
-- Read the upgrade notes for the version you are upgrading to (see the [releases page](https://github.com/thecodingmachine/workadventure/releases/)), 
-  and apply any changes if needed (this might often be an additional variable to add to the `.env` file)
+- Baixe o `docker-compose.prod.yaml` para a versão para a qual deseja atualizar e substitua-o em seu servidor
+- Agora, edite o arquivo `.env` e altere a `VERSION` para a versão correspondente.
+- Leia as notas de atualização para a versão para a qual você está atualizando (consulte a [página de lançamentos](https://github.com/thecodingmachine/workadventure/releases/)),
+e aplique quaisquer alterações, se necessário (isso pode ser uma variável adicional para adicionar ao arquivo `.env`)
 
-Then, simply run:
+Então, simplesmente execute:
 
 ```console
 docker-compose up -d --force-recreate
 ```
 
-#### If you are using a custom deployment method:
+#### Se você estiver usando um método de implantação personalizado:
 
-The upgrade path will of course depend on your deployment method. Here are some tips to make it easy:
+O caminho de atualização dependerá, é claro, do seu método de implantação. Aqui estão algumas dicas para facilitar:
 
-- Download the `docker-compose.prod.yaml` for the version you want to upgrade to.
-- Download the `docker-compose.prod.yaml` for your current version.
-- Compare the two files. The differences will be the changes you need to apply to your deployment method.
+- Baixe o `docker-compose.prod.yaml` para a versão para a qual deseja atualizar.
+- Baixe o `docker-compose.prod.yaml` para sua versão atual.
+- Compare os dois arquivos. As diferenças serão as alterações que você precisa aplicar ao seu método de implantação.
 
-## Troubleshooting
+## Solução de problemas
 
-In case of troubles, check if all your containers are started with:
+Em caso de problemas, verifique se todos os seus contêineres foram iniciados com:
 
 ```console
 docker-compose ps
 ```
 
-All containers should be running. If one is not, check the logs of the container with:
+Todos os contêineres devem estar em execução. Se um não estiver, verifique os logs do contêiner com:
 
 ```console
 docker-compose logs [container-name]
 ```
 
-You can also with the logs of all containers with:
+Você também pode usar os logs de todos os contêineres com:
 
 ```console
 docker-compose logs -f
