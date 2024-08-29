@@ -1,88 +1,88 @@
-# Contributing to WorkAdventure
+# Contribuindo para o WorkAdventure
 
-Are you looking to help on WorkAdventure? Awesome, feel welcome and read the following sections in order to know how to
-ask questions and how to work on something.
+Você está procurando ajudar no WorkAdventure? Ótimo, sinta-se à vontade e leia as seções a seguir para saber como
+fazer perguntas e como trabalhar em algo.
 
-## Contributions we are seeking
+## Contribuições que estamos buscando
 
-We love to receive contributions from our community — you!
+Adoramos receber contribuições da nossa comunidade — você!
 
-There are many ways to contribute, from writing tutorials or blog posts, improving the documentation,
-submitting bug reports and feature requests or writing code which can be incorporated into WorkAdventure itself.
+Há muitas maneiras de contribuir, desde escrever tutoriais ou postagens de blog, melhorar a documentação,
+enviar relatórios de bugs e solicitações de recursos ou escrever código que pode ser incorporado ao próprio WorkAdventure.
 
-## Contributing external resources
+## Contribuindo com recursos externos
 
-You can share your work on maps / articles / videos related to WorkAdventure on our [awesome-workadventure](https://github.com/workadventure/awesome-workadventure) list.
+Você pode compartilhar seu trabalho em mapas / artigos / vídeos relacionados ao WorkAdventure em nossa lista [awesome-workadventure](https://github.com/workadventure/awesome-workadventure).
 
-## Developer documentation
+## Documentação do desenvolvedor
 
-Documentation targeted at developers can be found in the [`/docs/dev`](docs/dev/)
+A documentação direcionada aos desenvolvedores pode ser encontrada em [`/docs/dev`](docs/dev/)
 
-## Using the issue tracker
+## Usando o rastreador de problemas
 
-First things first: **Do NOT report security vulnerabilities in public issues!**.
-Please read the [security guide](SECURITY.md) to learn who to do a security disclosure to the WorkAdventure core team.
+Primeiras coisas: **NÃO relate vulnerabilidades de segurança em problemas públicos!**.
+Leia o [guia de segurança](SECURITY.md) para saber quem deve fazer uma divulgação de segurança para a equipe principal do WorkAdventure.
 
-You can use [GitHub issue tracker](https://github.com/thecodingmachine/workadventure/issues) to:
+Você pode usar o [rastreador de problemas do GitHub](https://github.com/thecodingmachine/workadventure/issues) para:
 
-- File bug reports
-- Ask for feature requests
+- Enviar relatórios de bugs
+- Solicitar solicitações de recursos
 
-If you have more general questions, a good place to ask is [our Discord server](https://discord.gg/G6Xh9ZM9aR).
+Se você tiver perguntas mais gerais, um bom lugar para perguntar é [nosso servidor Discord](https://discord.gg/G6Xh9ZM9aR).
 
-Finally, you can come and talk to the WorkAdventure core team... on WorkAdventure, of course! [Our offices are here](https://play.staging.workadventu.re/@/tcm/workadventure/wa-village).
+Finalmente, você pode vir e falar com a equipe principal do WorkAdventure... no WorkAdventure, é claro! [Nossos escritórios estão aqui](https://play.staging.workadventu.re/@/tcm/workadventure/wa-village).
 
-## Pull requests
+## Solicitações de pull
 
-Good pull requests - patches, improvements, new features - are a fantastic help. They should remain focused in scope
-and avoid containing unrelated commits.
+Boas solicitações de pull - patches, melhorias, novos recursos - são uma ajuda fantástica. Elas devem permanecer focadas no escopo
+e evitar conter confirmações não relacionadas.
 
-Please ask first before embarking on any significant pull request (e.g. implementing features, refactoring code),
-otherwise you risk spending a lot of time working on something that the project's developers might not want to merge
-into the project.
+Por favor, pergunte primeiro antes de embarcar em qualquer solicitação de pull significativa (por exemplo, implementar recursos, refatorar código),
+caso contrário, você corre o risco de gastar muito tempo trabalhando em algo que os desenvolvedores do projeto podem não querer mesclar
+no projeto.
 
-You can ask us on [Discord](https://discord.gg/G6Xh9ZM9aR) or in the [GitHub issues](https://github.com/thecodingmachine/workadventure/issues).
+Você pode nos perguntar no [Discord](https://discord.gg/G6Xh9ZM9aR) ou nos [problemas do GitHub](https://github.com/thecodingmachine/workadventure/issues).
 
-### Linting your code
+### Linting seu código
 
-Before committing, be sure to install the "Prettier" precommit hook that will reformat your code to our coding style.
+Antes de fazer o commit, certifique-se de instalar o hook de pré-commit "Prettier" que reformatará seu código para nosso estilo de codificação.
 
-In order to enable the "Prettier" precommit hook, at the root of the project, run:
+Para habilitar o hook de pré-commit "Prettier", na raiz do projeto, execute:
 
 ```console
-$ # This install all dependencies
+$ # Isso instala todas as dependências
 $ npm install
-$ # This actually installs the precommit hooks.
+$ # Isso realmente instala os hooks de pré-commit.
 $ npm run prepare
 ```
 
-If you don't have the precommit hook installed (or if you committed code before installing the precommit hook), you will need
-to run code linting manually:
+Se você não tiver o hook precommit instalado (ou se você tiver feito commit do código antes de instalar o hook precommit), você precisará
+executar o code linting manualmente:
 
 ```console
 $ docker-compose exec play npm run pretty
 $ docker-compose exec back npm run pretty
 ```
 
-### Providing tests
+### Fornecendo testes
 
-WorkAdventure is based on a video game engine (Phaser), and video games are not the easiest programs to unit test.
+O WorkAdventure é baseado em um mecanismo de videogame (Phaser), e videogames não são os programas mais fáceis de testar unidades.
 
-Nevertheless, if your code can be unit tested, please provide a unit test (we use Jasmine), or an end-to-end test (we use Playwright).
+No entanto, se seu código puder ser testado em unidades, forneça um teste de unidade (usamos Jasmine) ou um teste de ponta a ponta (usamos Playwright).
 
-If you are providing a new feature, you should setup a test map in the `maps/tests` directory. The test map should contain
-some description text describing how to test the feature.
+Se você estiver fornecendo um novo recurso, você deve configurar um mapa de teste no diretório `maps/tests`. O mapa de teste deve conter
+algum texto descritivo descrevendo como testar o recurso.
 
-* if the features is meant to be manually tested, you should modify the `maps/tests/index.html` file to add a reference
-  to your newly created test map
-* if the features can be automatically tested, please provide an end-to-end test
+* se os recursos forem testados manualmente, você deve modificar o arquivo `maps/tests/index.html` para adicionar uma referência
+ao seu mapa de teste recém-criado
+* se os recursos puderem ser testados automaticamente, forneça um teste de ponta a ponta
 
-#### Running end-to-end tests
+#### Executando testes de ponta a ponta
 
-End-to-end tests are available in the "/tests" directory.
+Testes de ponta a ponta estão disponíveis no diretório "/tests".
 
-More information on running end-to-end tests can be found in the [`/tests/README`](/tests/README.md).
+Mais informações sobre a execução de testes de ponta a ponta podem ser encontradas em [`/tests/README`](/tests/README.md).
 
-### A bad wording or a missing language
+### Uma redação incorreta ou um idioma ausente
 
-If you notice a translation error or missing language you can help us by following the [how to translate](docs/dev/how-to-translate.md) documentation.
+Se você notar um erro de tradução ou idioma ausente, pode nos ajudar seguindo a documentação [como traduzir](docs/dev/how-to-translate.md).
