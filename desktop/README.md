@@ -1,22 +1,22 @@
-# Desktop app
+# Aplicativo de desktop
 
-The desktop component is an electron app inside `./electron/`. It uses a hybrid setup based of two main components:
-- A `local-app` bundled into the electron app with two main parts:
-  - A sidebar to show the server list, with the currently selected server
-  - A main page which is used to manage servers and to show other "local" pages like the desktop-app settings
-- A BrowserView (often called `appView` or `app`) showing the actual frontend of an external WorkAdventure deployment.
-  If a server is selected the BrowserView / `appView` is overlaying the whole main part right to the sidebar.
+O componente de desktop é um aplicativo electron dentro de `./electron/`. Ele usa uma configuração híbrida com base em dois componentes principais:
+- Um `local-app` empacotado no aplicativo electron com duas partes principais:
+- Uma barra lateral para mostrar a lista de servidores, com o servidor selecionado no momento
+- Uma página principal que é usada para gerenciar servidores e mostrar outras páginas "locais" como as configurações do aplicativo de desktop
+- Um BrowserView (frequentemente chamado de `appView` ou `app`) mostrando o frontend real de uma implantação externa do WorkAdventure.
+Se um servidor for selecionado, o BrowserView / `appView` está sobrepondo toda a parte principal diretamente na barra lateral.
 
-## Development
+## Desenvolvimento
 
 ```bash
-# start local-app in watch mode
+# iniciar aplicativo local no modo de observação
 cd local-app && yarn dev
 
-# start electron app in watch mode
+# iniciar o aplicativo eletrônico no modo de observação
 cd electron && LOCAL_APP_URL=http://localhost:3000 yarn dev
 
-# or create an executable by running:
+# ou crie um executável executando:
 cd electron && yarn bundle
 ```
 
